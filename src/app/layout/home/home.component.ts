@@ -1,5 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener, OnChanges, AfterViewChecked } from '@angular/core';
 import * as THREE from 'three'
+import Reflector from 'src/app/lib/Reflector';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -65,11 +66,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
       }
     }
 
-    // var face = new THREE.Geometry();
-    // face.vertices.push(new THREE.Vector3(-400, 400, -80));
-    // face.vertices.push(new THREE.Vector3(-400, -400, -80));
-    // face.vertices.push(new THREE.Vector3(400, -400, -80));
-    // face.vertices.push(new THREE.Vector3(400, 400, -80));
+   
 
     let material: any = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.5 });
     this.lines = new THREE.LineSegments(geometry, material);
@@ -79,23 +76,19 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.points = new THREE.Points(pgeometry, material);
     this.scene.add(this.points);
 
-    const planeGepmetry = new THREE.PlaneGeometry(800, 800, 20, 20);
-    const planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
-    const plane = new THREE.Mesh(planeGepmetry, planeMaterial);
-    plane.position.set(0,0,-80);
-    plane.receiveShadow = true;
-    this.scene.add(plane);
+    // const planeGepmetry = new THREE.PlaneGeometry(800, 800, 20, 20);
+    // const planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
+    // const plane = new THREE.Mesh(planeGepmetry, planeMaterial);
+    // plane.position.set(0,0,-80);
+    // plane.receiveShadow = true;
+    // this.scene.add(plane);
+    // this.AddPlane();
+    
+    this.AddMirror();
 
-    // const materialface = new THREE.MeshBasicMaterial({ color: 0xffffff, opacity: 0.5 });
-    // face.faces.push(new THREE.Face3(0,1,2));
-    // face.faces.push(new THREE.Face3(2,3,0));
-    // const facescene = new THREE.Mesh(face, [materialface,materialface]);
-    // facescene.receiveShadow = true;
-    // this.scene.add(facescene);
-
-    // this.pointLight = new THREE.PointLight(0xffaa00);
-    // this.pointLight.position.z = -200;
-    // this.scene.add(this.pointLight);
+    this.pointLight = new THREE.PointLight(0xffaa00);
+    this.pointLight.position.z = -200;
+    this.scene.add(this.pointLight);
     
 
     // renderer = new THREE.CanvasRenderer();
@@ -133,6 +126,51 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.scene.add(directionalLight);
   }
 
+  //添加平面
+  AddPlane(){
+    var face = new THREE.BufferGeometry();
+    let vertices:number[] =[];
+    vertices.push(-400, 400, -80);
+    vertices.push(-400, -400, -80);
+    vertices.push(400, -400, -80);
+    vertices.push(400, 400, -80);
+    const normals:number[] =[0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];
+    const indexs:number[] =[];indexs.push(0,1,2,2,3,0)
+    face.setIndex(indexs);
+    face.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    face.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+    const materialface = new THREE.MeshLambertMaterial({ color: 0xffffff });
+    const facescene = new THREE.Mesh(face, materialface);
+    facescene.receiveShadow = true;
+    this.scene.add(facescene);
+  }
+
+  //添加纹理面
+  AddMirror(){
+    var face = new THREE.BufferGeometry();THREE.MirroredRepeatWrapping
+    const vertices:number[] =[];//点集
+    vertices.push(-400, 400, -80);
+    vertices.push(-400, -400, -80);
+    vertices.push(400, -400, -80);
+    vertices.push(400, 400, -80);
+    const indexs:number[] =[];indexs.push(0,1,2,2,3,0);//点索引
+    const normals:number[] =[0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];//法向
+    const uvs:number[] =[0,1,0,0,1,0,1,1];//纹理
+    face.setIndex(indexs);
+    face.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    face.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+    face.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+
+    const texture = new THREE.TextureLoader().load('/assets/textures/logo.jpg');
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.repeat.set(2,2);
+    const materialface = new THREE.MeshPhongMaterial({map:texture,color:0xffffff});
+    const facescene = new THREE.Mesh(face, materialface);
+    facescene.receiveShadow = true;
+    this.scene.add(facescene);
+  }
+
   GetSize(){
     const width = this.container.nativeElement.clientWidth;
     const height = this.container.nativeElement.clientHeight;
@@ -141,15 +179,15 @@ export class HomeComponent implements OnInit,AfterViewChecked {
 
   @HostListener("window:resize.out")
   resize() {
-    // var size = this.GetSize();
-    // this.camera.left = size.width / - 2;
-    // this.camera.right = size.width / 2;
-    // this.camera.top = size.height / 2;
-    // this.camera.bottom = size.height / - 2;
-    // this.camera.updateProjectionMatrix();
-    // //camera = new THREE.OrthographicCamera( size.width / - 2, size.width / 2, size.height / 2, size.height / - 2, - 500, 1000 );
-    // this.renderer.setSize(size.width, size.height);
-    // this.renderer.render(this.scene, this.camera);
+    var size = this.GetSize();
+    this.camera.left = size.width / - 2;
+    this.camera.right = size.width / 2;
+    this.camera.top = size.height / 2;
+    this.camera.bottom = size.height / - 2;
+    this.camera.updateProjectionMatrix();
+    //camera = new THREE.OrthographicCamera( size.width / - 2, size.width / 2, size.height / 2, size.height / - 2, - 500, 1000 );
+    this.renderer.setSize(size.width, size.height);
+    this.renderer.render(this.scene, this.camera);
   }
 
   // @HostListener("window:mousewheel.out",["$event"])
