@@ -172,7 +172,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.scene.add(facescene);
   }
 
-//加载纹理
+  //加载纹理
   GetTexture(url):Promise<THREE.Texture>{
     return new Promise((reslove,reject)=>{
       new THREE.TextureLoader().load(url,texture=>{
