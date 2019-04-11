@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild, ElementRef, HostListener, OnChanges, AfterViewChecked } from '@angular/core';
 import * as THREE from 'three'
 import Reflector from 'src/app/lib/Reflector';
+import { resolve } from 'url';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
@@ -33,7 +34,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
   };
   constructor() { }
 
-  ngOnInit() {
+  async ngOnInit() {
     const width = this.container.nativeElement.clientWidth;
     const height = this.container.nativeElement.clientHeight;
     this.camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, - 99999, 99999);
@@ -84,7 +85,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     // this.scene.add(plane);
     // this.AddPlane();
     
-    this.AddMirror();
+    await this.AddMirror();
 
     this.pointLight = new THREE.PointLight(0xffaa00);
     this.pointLight.position.z = -200;
@@ -146,7 +147,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
   }
 
   //添加纹理面
-  AddMirror(){
+  async AddMirror(){
     var face = new THREE.BufferGeometry();THREE.MirroredRepeatWrapping
     const vertices:number[] =[];//点集
     vertices.push(-400, 400, -80);
@@ -160,8 +161,8 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     face.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
     face.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
     face.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
-
-    const texture = new THREE.TextureLoader().load('/assets/textures/logo.jpg');
+    
+    const texture = await this.GetTexture('/assets/textures/logo.jpg');
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
     texture.repeat.set(2,2);
@@ -169,6 +170,20 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     const facescene = new THREE.Mesh(face, materialface);
     facescene.receiveShadow = true;
     this.scene.add(facescene);
+    return new Promise((reslove,reject)=>{
+      reslove(true)
+    });
+  }
+
+//加载纹理
+  GetTexture(url):Promise<THREE.Texture>{
+    return new Promise((reslove,reject)=>{
+      new THREE.TextureLoader().load(url,texture=>{
+        reslove(texture)
+      },null,(err)=>{
+        reject(err);
+      })
+    });
   }
 
   GetSize(){
