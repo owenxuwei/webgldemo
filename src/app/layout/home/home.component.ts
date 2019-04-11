@@ -170,9 +170,6 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     const facescene = new THREE.Mesh(face, materialface);
     facescene.receiveShadow = true;
     this.scene.add(facescene);
-    return new Promise((reslove,reject)=>{
-      reslove(true)
-    });
   }
 
 //加载纹理
