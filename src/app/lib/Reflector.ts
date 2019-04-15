@@ -262,4 +262,4 @@ Reflector.ReflectorShader = {
 	].join( '\n' )
 };
 
-export default Reflector;
+export  {Reflector};

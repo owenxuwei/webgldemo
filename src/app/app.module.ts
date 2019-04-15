@@ -1,9 +1,9 @@
-import { BrowserModule, EventManager } from '@angular/platform-browser';
+import { BrowserModule, EventManager, EVENT_MANAGER_PLUGINS } from '@angular/platform-browser';
 import { NgModule } from '@angular/core';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { CustomEventManager } from './zone/custom-event-manager';
+import { MultiEventPlugin } from './zone/custom-event-plugin';
 
 @NgModule({
   declarations: [
@@ -14,7 +14,8 @@ import { CustomEventManager } from './zone/custom-event-manager';
     AppRoutingModule
   ],
   providers: [ 
-    { provide: EventManager, useClass: CustomEventManager }//移除不必要的检查事件
+    // { provide: EventManager, useClass: CustomEventManager }//移除不必要的检查事件
+    { provide: EVENT_MANAGER_PLUGINS, useClass: MultiEventPlugin, multi: true }
    
   ],
   bootstrap: [AppComponent]

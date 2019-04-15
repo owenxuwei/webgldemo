@@ -1,11 +1,12 @@
-import { Component, OnInit, ViewChild, ElementRef, HostListener, OnChanges, AfterViewChecked } from '@angular/core';
-import * as THREE from 'three'
-import Reflector from 'src/app/lib/Reflector';
-import { resolve } from 'url';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, NgZone } from '@angular/core';
+// import * as THREE from 'three'
+import * as THREE from 'src/app/lib';
+// import Reflector from 'src/app/lib/Reflector';
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.scss']
+  styleUrls: ['./home.component.scss'],
+  providers:[]
 })
 export class HomeComponent implements OnInit,AfterViewChecked {
   mouse: any;
@@ -18,13 +19,15 @@ export class HomeComponent implements OnInit,AfterViewChecked {
   }
 
   @ViewChild('container') container:ElementRef;
-  camera:THREE.OrthographicCamera;
+  camera:THREE.PerspectiveCamera;
   scene:THREE.Scene;
   lines:THREE.LineSegments;
   points:THREE.Points;
   pointLight:THREE.PointLight;
   raycaster: THREE.Raycaster;
   renderer:THREE.WebGLRenderer;
+  eventmove:any;
+  eventmouseup:any;
   count =0;
   curmouse:any={};
   ButtonType = {
@@ -32,16 +35,16 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     Middle: 1,
     Right: 2
   };
-  constructor() { }
+  constructor(private zone: NgZone) { }
 
   async ngOnInit() {
     const width = this.container.nativeElement.clientWidth;
     const height = this.container.nativeElement.clientHeight;
-    this.camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, - 99999, 99999);
-    // this.camera = new THREE.PerspectiveCamera( 60, width/height, 10, 1000 );
+    // this.camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, - 99999, 99999);
+    this.camera = new THREE.PerspectiveCamera( 45, width/height, 1, 10000 );
     this.camera.position.x = 0;
     this.camera.position.y = 0;
-    this.camera.position.z = 60;
+    this.camera.position.z = 480;
     this.camera.lookAt(new THREE.Vector3(0, 0, -1));
 
     this.scene = new THREE.Scene();
@@ -85,11 +88,13 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     // this.scene.add(plane);
     // this.AddPlane();
     
-    await this.AddMirror();
+    await this.AddTexture();
+
+    // this.AddMirror();
 
     this.pointLight = new THREE.PointLight(0xffaa00);
     this.pointLight.position.z = -200;
-    this.scene.add(this.pointLight);
+    // this.scene.add(this.pointLight);
     
 
     // renderer = new THREE.CanvasRenderer();
@@ -107,7 +112,10 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.raycaster.params.Points.threshold=15;
     this.mouse = new THREE.Vector2();
 
-    this.renderer.render(this.scene, this.camera);
+    this.zone.runOutsideAngular(()=>this.animate());
+    // window.requestAnimationFrame(()=>{
+    //   this.renderer.render(this.scene, this.camera);
+    // });
   }
 
   //添加平行光
@@ -147,8 +155,8 @@ export class HomeComponent implements OnInit,AfterViewChecked {
   }
 
   //添加纹理面
-  async AddMirror(){
-    var face = new THREE.BufferGeometry();THREE.MirroredRepeatWrapping
+  async AddTexture(){
+    var face = new THREE.BufferGeometry();
     const vertices:number[] =[];//点集
     vertices.push(-400, 400, -80);
     vertices.push(-400, -400, -80);
@@ -172,6 +180,42 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.scene.add(facescene);
   }
 
+  //添加镜面反射
+  AddMirror(){
+    // var face = new THREE.BufferGeometry();
+    // const vertices:number[] =[];//点集
+    // vertices.push(-400, 400, -80);
+    // vertices.push(-400, -400, -80);
+    // vertices.push(400, -400, -80);
+    // vertices.push(400, 400, -80);
+    // const indexs:number[] =[];indexs.push(0,1,2,2,3,0);//点索引
+    // const normals:number[] =[0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1];//法向
+    // // const uvs:number[] =[0,1,0,0,1,0,1,1];//纹理
+    // face.setIndex(indexs);
+    // face.addAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+    // face.addAttribute( 'normal', new THREE.Float32BufferAttribute( normals, 3 ) );
+    // // face.addAttribute( 'uv', new THREE.Float32BufferAttribute( uvs, 2 ) );
+
+    // var radius = 400;
+    // var segments = 32; //<-- Increase or decrease for more resolution I guess
+    // var face = new THREE.SphereBufferGeometry( radius, segments, segments );
+    // face.translate(0,0,-480);
+
+    const face = new THREE.PlaneGeometry(800, 800, 20, 20);
+    face.translate(0,0,-80);
+    let options = {
+      clipBias: 1,
+      textureWidth: 800 * window.devicePixelRatio,
+      textureHeight: 800 * window.devicePixelRatio,
+      color: 0x889999,
+      // recursion: 1
+    };
+    const facescene = new THREE.Reflector(face, options);
+    // facescene.receiveShadow = true;
+    this.scene.add(facescene);
+
+  }
+
   //加载纹理
   GetTexture(url):Promise<THREE.Texture>{
     return new Promise((reslove,reject)=>{
@@ -189,34 +233,36 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     return {width:width,height:height};
   }
 
-  @HostListener("window:resize.out")
-  resize() {
-    var size = this.GetSize();
-    this.camera.left = size.width / - 2;
-    this.camera.right = size.width / 2;
-    this.camera.top = size.height / 2;
-    this.camera.bottom = size.height / - 2;
-    this.camera.updateProjectionMatrix();
-    //camera = new THREE.OrthographicCamera( size.width / - 2, size.width / 2, size.height / 2, size.height / - 2, - 500, 1000 );
-    this.renderer.setSize(size.width, size.height);
-    this.renderer.render(this.scene, this.camera);
-  }
+  // @HostListener("window:resize.out")
+  // resize() {
+  //   var size = this.GetSize();
+  //   this.camera.left = size.width / - 2;
+  //   this.camera.right = size.width / 2;
+  //   this.camera.top = size.height / 2;
+  //   this.camera.bottom = size.height / - 2;
+  //   this.camera.updateProjectionMatrix();
+  //   //camera = new THREE.OrthographicCamera( size.width / - 2, size.width / 2, size.height / 2, size.height / - 2, - 500, 1000 );
+  //   this.renderer.setSize(size.width, size.height);
+  //   this.renderer.render(this.scene, this.camera);
+  // }
 
   // @HostListener("window:mousewheel.out",["$event"])
   mousewheel(e:MouseWheelEvent) {
     e.stopPropagation();
     e.preventDefault();
     // e.preventDefault();
-    if(e.wheelDelta<0) {
-        this.camera.scale.multiplyScalar(1.1);
+    if(e.wheelDelta>0) {
+        // this.camera.scale.multiplyScalar(1.1);
+        this.scene.scale.multiplyScalar(1.1);
        // camera.zoom*=1.1;
         this.raycaster.linePrecision*=1.1;
         this.scale*=1.1;
      //   raycaster.params.Points.threshold*=1.1;
     }
     else{
-        this.camera.scale.multiplyScalar(0.9);
-      //  camera.zoom*=0.9;
+        // this.camera.scale.multiplyScalar(0.9);
+        this.scene.scale.multiplyScalar(0.9);
+        //  camera.zoom*=0.9;
         this.raycaster.linePrecision*=0.9;
         this.scale*=0.9;
       //  raycaster.params.Points.threshold*=0.9;
@@ -263,7 +309,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
                 var x= Math.round( vertor.x/40);
                 var y= Math.round( vertor.y/40);
                 this.CreateSphere(vertor,x,y);
-                this.renderer.render(this.scene, this.camera);
+                // this.renderer.render(this.scene, this.camera);
                 if(this.isend(x,y)){
                     if(this.isblack) alert("白方赢！");
                     else  alert("黑方赢！");
@@ -272,35 +318,40 @@ export class HomeComponent implements OnInit,AfterViewChecked {
                         if ( object.geometry instanceof THREE.SphereBufferGeometry ) this.scene.children.splice(i,1);
                     }
                     this.chessman={};
-                    this.renderer.render(this.scene, this.camera);
+                    // this.renderer.render(this.scene, this.camera);
                 }
             }
         }
-		this.curbutton=event.button;
+    this.curbutton=event.button;
+    this.eventmove = (e)=>this.mousemove(e);
+    this.container.nativeElement.addEventListener("mousemove",this.eventmove);
+    this.eventmouseup = (e)=>this.mouseup(e);
+    document.addEventListener("mouseup",this.eventmouseup);
   }
 
-  mousemove(event:MouseWheelEvent) {
-    event.stopPropagation();
-    event.preventDefault();
+  mousemove(event:MouseEvent) {
+    // event.stopPropagation();
+    // event.preventDefault();
     const size=this.GetSize();
         if(this.curbutton==this.ButtonType.Right){
             var v = new THREE.Vector3(event.clientY-this.curmouse.y,event.clientX-this.curmouse.x ,0);
             var angle= v.length()/200*Math.PI;
-            // this.camera.rotateOnAxis(v.normalize(),angle);
-            this.scene.rotateOnWorldAxis(v.normalize(),angle);
+            this.camera.rotateOnAxis(v.normalize(),angle);
+            // this.scene.rotateOnWorldAxis(v.normalize(),angle);
             this.curmouse.x=event.clientX;
             this.curmouse.y=event.clientY;
-            this.renderer.render(this.scene, this.camera);
+            // this.renderer.render(this.scene, this.camera);
             return;
         }
-        else if(this.curbutton==this.ButtonType.Middle){
+        else 
+        if(this.curbutton==this.ButtonType.Middle){
             var v = new THREE.Vector3(event.clientX-this.curmouse.x,this.curmouse.y-event.clientY,0);
             var distance = - v.length()*this.scale;
             //camera.translateOnAxis(v.normalize(),distance);
             this.camera.translateOnAxis(v.normalize(),distance);
             this.curmouse.x=event.clientX;
             this.curmouse.y=event.clientY;
-            this.renderer.render(this.scene, this.camera);
+            // this.renderer.render(this.scene, this.camera);
             return;
         }
 
@@ -315,10 +366,20 @@ export class HomeComponent implements OnInit,AfterViewChecked {
           this.container.nativeElement.style.cursor = 'auto';
   }
 
-  mouseup(event:MouseWheelEvent) {
+  mouseup(event:MouseEvent) {
     event.stopPropagation();
     event.preventDefault();
+    event.returnValue=false;  
     this.curbutton=null;
+    if(this.eventmove){
+      this.container.nativeElement.removeEventListener("mousemove",this.eventmove);
+      this.eventmove = null;
+    }
+    if(this.eventmouseup){
+      document.removeEventListener("mouseup",this.eventmouseup);
+      this.eventmouseup = null;
+    }
+    return false; 
   }
 
   isend(x: number, y: number): any {
@@ -364,7 +425,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
             shininess:30
         });
         // var material = new THREE.MeshStandardMaterial({color:0x7777ff});
-        if(!this.isblack) material.color=new THREE.Color(  0.7,0.7,0.7  );
+        if(!this.isblack) material.color=new THREE.Color(  0.7,0.7,0.7 );
         this.isblack=!this.isblack;
         var radius = 12;
         var segments = 32; //<-- Increase or decrease for more resolution I guess
@@ -378,4 +439,8 @@ export class HomeComponent implements OnInit,AfterViewChecked {
         this.scene.add( circle );
   }
 
+  animate(){
+    requestAnimationFrame(()=> this.animate() );
+    this.renderer.render(this.scene, this.camera);
+  }
 }
