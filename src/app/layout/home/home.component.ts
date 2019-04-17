@@ -1,6 +1,10 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, NgZone } from '@angular/core';
 // import * as THREE from 'three'
 import * as THREE from 'src/app/lib';
+// import  '../../../../../node_modules/physijs-browserify/physijs'
+// window["Physijs"] = require('physijs-browserify')(THREE);
+// Physijs.scripts.worker = '/assets/libs/physi-worker.js';
+// Physijs.scripts.ammo = '/assets/libs/ammo.js';
 // import Reflector from 'src/app/lib/Reflector';
 @Component({
   selector: 'app-home',
@@ -14,13 +18,16 @@ export class HomeComponent implements OnInit,AfterViewChecked {
   curbutton: number;
   chessman: any={};
   scale: number =1;
+  font: THREE.Font;
   ngAfterViewChecked(): void {
     console.log('check');
   }
 
   @ViewChild('container') container:ElementRef;
   camera:THREE.PerspectiveCamera;
+  xyzcamera:THREE.PerspectiveCamera;
   scene:THREE.Scene;
+  xyzscene:THREE.Scene;
   lines:THREE.LineSegments;
   points:THREE.Points;
   pointLight:THREE.PointLight;
@@ -35,9 +42,12 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     Middle: 1,
     Right: 2
   };
-  constructor(private zone: NgZone) { }
+  constructor(private zone: NgZone) {
+   
+   }
 
   async ngOnInit() {
+    var getfront = this.GetText('/assets/fonts/helvetiker_regular.typeface.json');
     const width = this.container.nativeElement.clientWidth;
     const height = this.container.nativeElement.clientHeight;
     // this.camera = new THREE.OrthographicCamera(width / - 2, width / 2, height / 2, height / - 2, - 99999, 99999);
@@ -47,7 +57,14 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.camera.position.z = 480;
     this.camera.lookAt(new THREE.Vector3(0, 0, -1));
 
+    this.xyzcamera = new THREE.PerspectiveCamera( 45, width/height, 1, 10000 );
+    this.xyzcamera.position.x = 0;
+    this.xyzcamera.position.y = 0;
+    this.xyzcamera.position.z = 480;
+    this.xyzcamera.lookAt(new THREE.Vector3(0, 0, -1));
+
     this.scene = new THREE.Scene();
+    this.xyzscene = new THREE.Scene();
 
     var ambient = new THREE.AmbientLight(0x101010);
     this.scene.add(ambient);
@@ -74,12 +91,45 @@ export class HomeComponent implements OnInit,AfterViewChecked {
 
     let material: any = new THREE.LineBasicMaterial({ color: 0x000000, opacity: 0.5 });
     this.lines = new THREE.LineSegments(geometry, material);
-    this.scene.add(this.lines);
+    // this.scene.add(this.lines);
 
     material = new THREE.PointsMaterial({ color: 0xffffff, size: 3, sizeAttenuation: false });
     this.points = new THREE.Points(pgeometry, material);
     this.scene.add(this.points);
 
+    var p = new THREE.Vector3(0, 0, 0);
+    var arrowwith = width/50;
+    const arrowx = new THREE.ArrowHelper(new THREE.Vector3(1, 0, 0),p,arrowwith,0,8,3);
+    arrowx.setColor(new THREE.Color(1,0,0));
+    this.xyzscene.add(arrowx);
+    const arrowy = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0),p,arrowwith,0,8,3);
+    arrowy.setColor(new THREE.Color(0,1,0));
+    this.xyzscene.add(arrowy);
+    const arrowz = new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1),p,arrowwith,0,8,3);
+    arrowz.setColor(new THREE.Color(0,0,1));
+    this.xyzscene.add(arrowz);
+    this.font = await getfront;
+    var textoptions = {
+      size: 7,
+      height: 0,
+      font: this.font, // “引用js字体必须换成英文”
+      bevelThickness: 1,
+      bevelSize: 1,
+      bevelSegments: 1,
+      curveSegments: 50,
+      steps: 1
+    }
+    var x = new THREE.TextGeometry("x", textoptions);
+    var textMesh = new THREE.Mesh(x, new THREE.MeshBasicMaterial({color:new THREE.Color(1,0,0),depthTest:false}))
+    textMesh.position.set(arrowwith+2,-3,0);
+    this.xyzscene.add(textMesh);
+    this.xyzscene.position.set(-width/5, -height/5, 0);
+
+    this.xyzscene.children.forEach(o1=>{
+      o1.children.forEach((o:any)=>{
+        o.material.depthTest = false;
+      })
+    })
     // const planeGepmetry = new THREE.PlaneGeometry(800, 800, 20, 20);
     // const planeMaterial = new THREE.MeshLambertMaterial({color: 0xffffff});
     // const plane = new THREE.Mesh(planeGepmetry, planeMaterial);
@@ -112,7 +162,9 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     this.raycaster.params.Points.threshold=15;
     this.mouse = new THREE.Vector2();
 
-    this.zone.runOutsideAngular(()=>this.animate());
+    this.zone.runOutsideAngular(()=>{
+      this.animate();
+    });
     // window.requestAnimationFrame(()=>{
     //   this.renderer.render(this.scene, this.camera);
     // });
@@ -173,7 +225,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     const texture = await this.GetTexture('/assets/textures/logo.jpg');
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(2,2);
+    texture.repeat.set(2.5,2.5);
     const materialface = new THREE.MeshPhongMaterial({map:texture,color:0xffffff});
     const facescene = new THREE.Mesh(face, materialface);
     facescene.receiveShadow = true;
@@ -227,6 +279,17 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     });
   }
 
+  //字体
+  GetText(url):Promise<THREE.Font>{
+    return new Promise((reslove,reject)=>{
+      new THREE.FontLoader().load(url,font=>{
+        reslove(font)
+      },null,(err)=>{
+        reject(err);
+      })
+    });
+  }
+
   GetSize(){
     const width = this.container.nativeElement.clientWidth;
     const height = this.container.nativeElement.clientHeight;
@@ -272,6 +335,7 @@ export class HomeComponent implements OnInit,AfterViewChecked {
   }
 
   GetObj(mouse: any, objs: THREE.Object3D): any {
+    if(!this.raycaster) return;
     this.raycaster.setFromCamera(mouse, this.camera);
     const intersects = this.raycaster.intersectObject(objs);
     let INTERSECTED;
@@ -323,47 +387,53 @@ export class HomeComponent implements OnInit,AfterViewChecked {
             }
         }
     this.curbutton=event.button;
-    this.eventmove = (e)=>this.mousemove(e);
-    this.container.nativeElement.addEventListener("mousemove",this.eventmove);
+    // this.eventmove = (e)=>this.mousemove(e);
+    // this.container.nativeElement.addEventListener("mousemove",this.eventmove);
     this.eventmouseup = (e)=>this.mouseup(e);
     document.addEventListener("mouseup",this.eventmouseup);
   }
 
-  mousemove(event:MouseEvent) {
+  mousemove(event: MouseEvent) {
     // event.stopPropagation();
     // event.preventDefault();
-    const size=this.GetSize();
-        if(this.curbutton==this.ButtonType.Right){
-            var v = new THREE.Vector3(event.clientY-this.curmouse.y,event.clientX-this.curmouse.x ,0);
-            var angle= v.length()/200*Math.PI;
-            this.camera.rotateOnAxis(v.normalize(),angle);
-            // this.scene.rotateOnWorldAxis(v.normalize(),angle);
-            this.curmouse.x=event.clientX;
-            this.curmouse.y=event.clientY;
-            // this.renderer.render(this.scene, this.camera);
-            return;
-        }
-        else 
-        if(this.curbutton==this.ButtonType.Middle){
-            var v = new THREE.Vector3(event.clientX-this.curmouse.x,this.curmouse.y-event.clientY,0);
-            var distance = - v.length()*this.scale;
-            //camera.translateOnAxis(v.normalize(),distance);
-            this.camera.translateOnAxis(v.normalize(),distance);
-            this.curmouse.x=event.clientX;
-            this.curmouse.y=event.clientY;
-            // this.renderer.render(this.scene, this.camera);
-            return;
-        }
+    const size = this.GetSize();
+    if (this.curbutton == this.ButtonType.Right) {
+      var v = new THREE.Vector3(event.clientY - this.curmouse.y, event.clientX - this.curmouse.x, 0);
+      var angle = v.length() / 200 * Math.PI;
+      // this.camera.rotateOnAxis(v.normalize(), angle);
+      this.scene.rotateOnWorldAxis(v.normalize(),angle);
+      
+      var q = this.scene.quaternion.clone();
+      this.xyzscene.setRotationFromQuaternion(q);
 
-        var box= this.container.nativeElement.getBoundingClientRect();
-        this.mouse.x = ((event.clientX-box.left)  /  size.width ) * 2 - 1;
-        this.mouse.y = - ( (event.clientY-box.top) / size.height ) * 2 + 1;
-        var index =  this.GetObj(this.mouse,this.lines);
-        if(index!==null) {
-          this.container.nativeElement.style.cursor = 'pointer';
-        }
-        else
-          this.container.nativeElement.style.cursor = 'auto';
+      this.curmouse.x = event.clientX;
+      this.curmouse.y = event.clientY;
+      // this.renderer.render(this.scene, this.camera);
+      return;
+    }
+    else if (this.curbutton == this.ButtonType.Middle) {
+      var v = new THREE.Vector3(event.clientX - this.curmouse.x, this.curmouse.y - event.clientY, 0);
+      var distance = - v.length() * this.scale;
+      //camera.translateOnAxis(v.normalize(),distance);
+      this.camera.translateOnAxis(v.normalize(), distance);
+      this.curmouse.x = event.clientX;
+      this.curmouse.y = event.clientY;
+      // this.renderer.render(this.scene, this.camera);
+      return;
+    }
+    else {
+      var box = this.container.nativeElement.getBoundingClientRect();
+      const mouse:any = {};
+      mouse.x = ((event.clientX - box.left) / size.width) * 2 - 1;
+      mouse.y = - ((event.clientY - box.top) / size.height) * 2 + 1;
+      var index = this.GetObj(mouse, this.lines);
+      if (index !== null) {
+        this.container.nativeElement.style.cursor = 'pointer';
+      }
+      else
+        this.container.nativeElement.style.cursor = 'auto';
+    }
+
   }
 
   mouseup(event:MouseEvent) {
@@ -371,10 +441,10 @@ export class HomeComponent implements OnInit,AfterViewChecked {
     event.preventDefault();
     event.returnValue=false;  
     this.curbutton=null;
-    if(this.eventmove){
-      this.container.nativeElement.removeEventListener("mousemove",this.eventmove);
-      this.eventmove = null;
-    }
+    // if(this.eventmove){
+    //   this.container.nativeElement.removeEventListener("mousemove",this.eventmove);
+    //   this.eventmove = null;
+    // }
     if(this.eventmouseup){
       document.removeEventListener("mouseup",this.eventmouseup);
       this.eventmouseup = null;
@@ -424,23 +494,48 @@ export class HomeComponent implements OnInit,AfterViewChecked {
             specular:new THREE.Color( 0.1,0.1,0.1 ),
             shininess:30
         });
+        material.morphTargets=true;
         // var material = new THREE.MeshStandardMaterial({color:0x7777ff});
         if(!this.isblack) material.color=new THREE.Color(  0.7,0.7,0.7 );
         this.isblack=!this.isblack;
         var radius = 12;
         var segments = 32; //<-- Increase or decrease for more resolution I guess
         var circleGeometry = new THREE.SphereBufferGeometry( radius, segments, segments );
-        var m1 = new THREE.Matrix4();
-        m1.lookAt(new THREE.Vector3(   0,0 ,0),new THREE.Vector3(   0,0 ,-1),new THREE.Vector3(   0, 1 ,0));
-        m1.setPosition(v);
-        circleGeometry.applyMatrix(m1);
+        var cubeTarget1 = new THREE.SphereBufferGeometry(6,  segments, segments);
+        circleGeometry.morphAttributes.position = [];
+        // add the spherical positions as the first morph target
+				circleGeometry.morphAttributes.position[ 0 ] = cubeTarget1.getAttribute('position');
+        // var m1 = new THREE.Matrix4();
+        // m1.lookAt(new THREE.Vector3(   0,0 ,0),new THREE.Vector3(   0,0 ,-1),new THREE.Vector3(   0, 1 ,0));
+        // m1.setPosition(v);
+        // circleGeometry.applyMatrix(m1);
         var circle = new THREE.Mesh( circleGeometry, material );
+        circle.userData.sign = 0.01;
+        circle.morphTargetInfluences[0]=0.01;
+        circle.position.set(v.x,v.y,v.z);
         circle.castShadow = true;
         this.scene.add( circle );
+        //circleGeometry.addEventListener
   }
 
   animate(){
     requestAnimationFrame(()=> this.animate() );
+    // this.animateSphere();
     this.renderer.render(this.scene, this.camera);
+    this.renderer.autoClear = false;
+    (<any>this.renderer).render(this.xyzscene, this.xyzcamera);
+    this.renderer.autoClear = true;
+  }
+
+  animateSphere(){
+    for (var i = this.scene.children.length - 1; i > -1; i--) {
+      const object = <THREE.Mesh>this.scene.children[i];
+      if (object.geometry instanceof THREE.SphereBufferGeometry) {
+        object.morphTargetInfluences[0] += object.userData.sign;
+        if (object.morphTargetInfluences[0] <= 0 || object.morphTargetInfluences[0] >= 1) {
+          object.userData.sign = - object.userData.sign;
+        }
+      }
+    }
   }
 }
