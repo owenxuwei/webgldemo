@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, NgZone, HostListener } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, NgZone, HostListener, OnDestroy } from '@angular/core';
 // import * as THREE from 'three'
 import * as THREE from 'src/app/lib';
 import { LightConfig } from 'src/app/lib/config';
@@ -13,16 +13,14 @@ import { LightConfig } from 'src/app/lib/config';
   styleUrls: ['./home.component.scss'],
   providers: []
 })
-export class HomeComponent implements OnInit, AfterViewChecked {
+export class HomeComponent implements OnInit, OnDestroy {
+
   mouse = new THREE.Vector2();
   isblack: boolean = false;
   curbutton: number;
   chessman: any = {};
   scale: number = 1;
   font: THREE.Font;
-  ngAfterViewChecked(): void {
-    console.log('check');
-  }
 
   @ViewChild('container') container: ElementRef;
   camera: THREE.PerspectiveCamera;
@@ -257,7 +255,7 @@ export class HomeComponent implements OnInit, AfterViewChecked {
     // this.camera.updateProjectionMatrix();
     //camera = new THREE.OrthographicCamera( size.width / - 2, size.width / 2, size.height / 2, size.height / - 2, - 500, 1000 );
     // var v = this.renderer.getViewport();
-    // this.renderer.setSize(size.width, size.height);
+    this.renderer.setSize(size.width, size.height);
   }
 
   // @HostListener("window:mousewheel.out",["$event"])
@@ -467,7 +465,13 @@ export class HomeComponent implements OnInit, AfterViewChecked {
     //circleGeometry.addEventListener
   }
 
+  isdestory = false;
+  ngOnDestroy(): void {
+    this.isdestory=true;
+  }
+
   animate() {
+    if(this.isdestory) return;
     requestAnimationFrame(() => this.animate());
     this.animateSphere();
     this.renderer.render(this.scene, this.camera);
