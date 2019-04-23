@@ -20,9 +20,11 @@
     "@angular/platform-browser": "~7.0.0",
     "@angular/platform-browser-dynamic": "~7.0.0",
     "@angular/router": "~7.0.0",
+    "ammo.js": "0.0.10",
     "core-js": "^2.5.4",
     "rxjs": "~6.3.3",
     "three": "^0.103.0",
+    "threebsp": "^1.0.4",
     "zone.js": "~0.8.26"
   },
   "devDependencies": {

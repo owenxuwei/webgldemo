@@ -64,7 +64,8 @@ class XYZ {
                 // o.material.blending = MultiplyBlending;
                 // o.material.transparent = true;
             })
-        })
+        });
+        if(this.q) this.setRotationFromQuaternion(this.q);
     }
 
     public renderer(renderer: WebGLRenderer) {
@@ -73,13 +74,14 @@ class XYZ {
         renderer.autoClear = true;
     }
 
+    q:Quaternion;
     setRotationFromQuaternion(q:Quaternion){
+        this.q=q;
         this.scene.setRotationFromQuaternion(q);
         const qin = q.clone().inverse();
         this.labelx.setRotationFromQuaternion(qin);
         this.labely.setRotationFromQuaternion(qin);
         this.labelz.setRotationFromQuaternion(qin);
-
     }
 
 }

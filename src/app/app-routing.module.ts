@@ -10,6 +10,10 @@ const routes: Routes = [
   {
     path: 'love', loadChildren: 'src/app/layout/love/love.module#LoveModule',
     // canActivate: [HomeCanActivate],
+  },
+  {
+    path: 'ammo', loadChildren: 'src/app/layout/ammo/ammo.module#AmmoModule',
+    // canActivate: [HomeCanActivate],
   }
 ];
 

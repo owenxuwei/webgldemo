@@ -255,6 +255,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     // this.camera.updateProjectionMatrix();
     //camera = new THREE.OrthographicCamera( size.width / - 2, size.width / 2, size.height / 2, size.height / - 2, - 500, 1000 );
     // var v = this.renderer.getViewport();
+
+    this.camera.aspect = size.width / size.height;
+    this.camera.updateProjectionMatrix();
+    this.xyz.init(size.width,size.height);
     this.renderer.setSize(size.width, size.height);
   }
 
