@@ -73,11 +73,11 @@ export class AmmoComponent implements OnInit {
     LightConfig.AddDirectionalLight(this.scene);
 
     //几何体对象
-    var cylinder = new THREE.CylinderGeometry(50,50,20,40);//圆柱
-    var cylinder2 = new THREE.SphereGeometry(10,20,20);//圆柱
+    var cylinder = new THREE.CylinderGeometry(50,50,40,40);//圆柱
+    var cylinder2 = new THREE.SphereGeometry(10,40,40);//圆柱
     cylinder2.translate(20,10,0)
     var box = new THREE.BoxGeometry(40,50,40);//立方体
-    var box2 = new THREE.SphereGeometry(30,50,40);//立方体
+    var box2 = new THREE.SphereGeometry(30,50,50);//立方体
     box2.translate(0,40,0)
     //材质对象
     var material=new THREE.MeshPhongMaterial({color:0x0000ff});
