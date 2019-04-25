@@ -73,12 +73,12 @@ export class AmmoComponent implements OnInit {
     LightConfig.AddDirectionalLight(this.scene);
 
     //几何体对象
-    var cylinder = new THREE.CylinderGeometry(50,50,40,40);//圆柱
-    var cylinder2 = new THREE.SphereGeometry(10,40,40);//圆柱
+    var cylinder = new THREE.CylinderGeometry(40,50,40,50,1);//圆柱
+    var cylinder2 = new THREE.SphereGeometry(10,30,30);//圆柱
     cylinder2.translate(20,10,0)
-    var box = new THREE.BoxGeometry(40,50,40);//立方体
-    var box2 = new THREE.SphereGeometry(30,50,50);//立方体
-    box2.translate(0,40,0)
+    var box = new THREE.BoxGeometry(40,50,40,1,1,1);//立方体
+    var box2 = new THREE.SphereGeometry(30,30,30);//立方体
+    box2.translate(0,35,0)
     //材质对象
     var material=new THREE.MeshPhongMaterial({color:0x0000ff});
     //网格模型对象
@@ -95,9 +95,13 @@ export class AmmoComponent implements OnInit {
     result = result.union(cylinderBSP2);
     result = result.subtract(boxBSP2);
 
-
     //ThreeBSP对象转化为网格模型对象
+    // var geometry = result.toGeometry();
+    // var bgeometry = new THREE.BufferGeometry().fromGeometry(geometry);
+    // var material0 = new THREE.ShaderMaterial();
+    // var mesh = new THREE.Mesh(bgeometry, material0);
     var mesh = result.toMesh();
+    
     this.scene.add(mesh);//网格模型添加到场景中
 
     this.container.nativeElement.appendChild(this.renderer.domElement);

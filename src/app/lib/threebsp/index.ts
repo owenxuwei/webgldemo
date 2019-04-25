@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 
-var BACK, COPLANAR, EPSILON, FRONT, SPANNING, Timelimit, returning,
+var BACK, COPLANAR, EPSILON, FRONT, SPANNING,
   __bind = function (fn, me) { return function () { return fn.apply(me, arguments); }; },
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
@@ -16,95 +16,8 @@ BACK = 2;
 
 SPANNING = 3;
 
-returning = function (value, fn) {
-  fn();
-  return value;
-};
-
-Timelimit = (function () {
-
-  function Timelimit(timeout, progress) {
-    this.timeout = timeout;
-    this.progress = progress;
-    this.doTask = __bind(this.doTask, this);
-
-    this.finish = __bind(this.finish, this);
-
-    this.start = __bind(this.start, this);
-
-    this.check = __bind(this.check, this);
-
-    "NOTHING";
-
-  }
-
-  Timelimit.prototype.check = function () {
-    var elapsed,
-      _this = this;
-    if (this.started == null) {
-      return;
-    }
-    elapsed = Date.now() - this.started;
-    var _ref, _ref1, _ref2;
-      if ((_ref = elapsed >= _this.timeout) != null ? _ref : Infinity) {
-        throw new Error("Timeout reached: " + elapsed + "/" + _this.timeout + ", " + ((_ref1 = _this.tasks) != null ? _ref1 : 0) + " tasks unfinished " + ((_ref2 = _this.done) != null ? _ref2 : 0) + " finished.");
-      }
-    return elapsed;
-  };
-
-  Timelimit.prototype.start = function () {
-    var _ref, _ref1, _ref2;
-    if ((_ref = this.started) == null) {
-      this.started = Date.now();
-    }
-    if ((_ref1 = this.tasks) == null) {
-      this.tasks = 0;
-    }
-    if ((_ref2 = this.total) == null) {
-      this.total = 0;
-    }
-    this.total += 1;
-    this.tasks += 1;
-    return this.check();
-  };
-
-  Timelimit.prototype.finish = function () {
-    var elapsed, _ref;
-    if ((this.tasks != null) && this.tasks < 1) {
-      throw new Error("Finished more tasks than started");
-    }
-    this.tasks -= 1;
-    elapsed = this.check();
-    if ((_ref = this.done) == null) {
-      this.done = 0;
-    }
-    this.done += 1;
-    if (this.progress != null) {
-      this.progress(this.done, this.total);
-    }
-    if (this.tasks === 0) {
-      "Finished " + this.done + " tasks in " + elapsed + "/" + this.timeout + " ms";
-      return this.started = this.done = this.total = void 0;
-    }
-  };
-
-  Timelimit.prototype.doTask = function (block) {
-    var result;
-    this.start();
-    result = block();
-    this.finish();
-    return result;
-  };
-
-  return Timelimit;
-
-})();
-
-
-function ThreeBSP(treeIsh, matrix?:any, options?:any) {
-  var _base, _ref, _ref1, _ref2, _ref3, _ref4, _ref5, _ref6;
+function ThreeBSP(treeIsh, matrix?: any) {
   this.matrix = matrix;
-  this.options = options != null ? options : {};
   this.intersect = __bind(this.intersect, this);
 
   this.union = __bind(this.union, this);
@@ -117,34 +30,14 @@ function ThreeBSP(treeIsh, matrix?:any, options?:any) {
 
   this.toTree = __bind(this.toTree, this);
 
-  this.withTimer = __bind(this.withTimer, this);
-
   if ((this.matrix != null) && !(this.matrix instanceof THREE.Matrix4)) {
-    this.options = this.matrix;
     this.matrix = void 0;
   }
-  if ((_ref = this.options) == null) {
-    this.options = {};
-  }
-  if ((_ref1 = this.matrix) == null) {
+  if (this.matrix == null) {
     this.matrix = new THREE.Matrix4();
-  }
-  if ((_ref2 = (_base = this.options).timer) == null) {
-    _base.timer = new Timelimit((_ref3 = (_ref4 = this.options.timer) != null ? _ref4.timeout : void 0) != null ? _ref3 : this.options.timeout, (_ref5 = (_ref6 = this.options.timer) != null ? _ref6.progress : void 0) != null ? _ref5 : this.options.progress);
   }
   this.tree = this.toTree(treeIsh);
 }
-
-ThreeBSP.prototype.withTimer = function (new_timer, block) {
-  var old_timer;
-  old_timer = this.options.timer;
-  try {
-    this.options.timer = new_timer;
-    return block();
-  } finally {
-    this.options.timer = old_timer;
-  }
-};
 
 ThreeBSP.prototype.toTree = function (treeIsh) {
   var face, geometry, i, polygons, _fn, _i, _len, _ref,
@@ -178,7 +71,7 @@ ThreeBSP.prototype.toTree = function (treeIsh) {
     face = _ref[i];
     _fn(face, i);
   }
-  return new ThreeBSP.Node(polygons, this.options);
+  return new ThreeBSP.Node(polygons);
 };
 
 ThreeBSP.prototype.toMesh = function (material) {
@@ -255,7 +148,7 @@ ThreeBSP.prototype.subtract = function (other) {
   _ref = [_this.tree.clone(), other.tree.clone()], us = _ref[0], them = _ref[1];
   us.invert().clipTo(them);
   them.clipTo(us).invert().clipTo(us).invert();
-  return new ThreeBSP(us.build(them.allPolygons()).invert(), _this.matrix, _this.options);
+  return new ThreeBSP(us.build(them.allPolygons()).invert(), _this.matrix);
 };
 
 ThreeBSP.prototype.union = function (other) {
@@ -264,15 +157,15 @@ ThreeBSP.prototype.union = function (other) {
   _ref = [_this.tree.clone(), other.tree.clone()], us = _ref[0], them = _ref[1];
   us.clipTo(them);
   them.clipTo(us).invert().clipTo(us).invert();
-  return new ThreeBSP(us.build(them.allPolygons()), _this.matrix, _this.options);
+  return new ThreeBSP(us.build(them.allPolygons()), _this.matrix);
 };
 
 ThreeBSP.prototype.intersect = function (other) {
   var _this = this;
   var them, us, _ref;
-    _ref = [_this.tree.clone(), other.tree.clone()], us = _ref[0], them = _ref[1];
-    them.clipTo(us.invert()).invert().clipTo(us.clipTo(them));
-    return new ThreeBSP(us.build(them.allPolygons()).invert(), _this.matrix, _this.options);
+  _ref = [_this.tree.clone(), other.tree.clone()], us = _ref[0], them = _ref[1];
+  them.clipTo(us.invert()).invert().clipTo(us.clipTo(them));
+  return new ThreeBSP(us.build(them.allPolygons()).invert(), _this.matrix);
 };
 
 ThreeBSP.Vertex = (function (_super) {
@@ -313,7 +206,7 @@ ThreeBSP.Vertex = (function (_super) {
 
 ThreeBSP.Polygon = (function () {
 
-  function Polygon(vertices?:any, normal?:any, w?:any) {
+  function Polygon(vertices?: any, normal?: any, w?: any) {
     this.vertices = vertices != null ? vertices : [];
     this.normal = normal;
     this.w = w;
@@ -456,36 +349,144 @@ ThreeBSP.Polygon = (function () {
   };
 
   Polygon.prototype.subdivide = function (polygon, coplanar_front, coplanar_back, front, back) {
-    var poly, side, _i, _len, _ref, _results;
+    var poly, side, _i, _len, _ref;
     _ref = this.tessellate(polygon);
-    _results = [];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       poly = _ref[_i];
       side = this.classifySide(poly);
       switch (side) {
         case FRONT:
-          _results.push(front.push(poly));
+          front.push(poly);
           break;
         case BACK:
-          _results.push(back.push(poly));
+          back.push(poly);
           break;
         case COPLANAR:
           if (this.normal.dot(poly.normal) > 0) {
-            _results.push(coplanar_front.push(poly));
+            coplanar_front.push(poly);
           } else {
-            _results.push(coplanar_back.push(poly));
+            coplanar_back.push(poly);
           }
           break;
         default:
           throw new Error("BUG: Polygon of classification " + side + " in subdivision");
       }
     }
-    return _results;
   };
 
   return Polygon;
 
 })();
+
+function buildrecursive(_this, polygons) {
+  var sides;
+  sides = {
+    front: [],
+    back: []
+  };
+  if (!_this.divider) {
+    // _this.divider = polygons[0].clone();
+    _this.divider = polygons[Math.floor(polygons.length / 2)].clone();
+  }
+  for (var _i = 0; _i < polygons.length; _i++) {
+    _this.divider.subdivide(polygons[_i], _this.polygons, _this.polygons, sides.front, sides.back);
+  }
+  if (sides.front.length) {
+    if (!_this.front) {
+      _this.front = new ThreeBSP.Node();
+    }
+    buildrecursive(_this.front, sides.front);
+  }
+  if (sides.back.length) {
+    if (!_this.back) {
+      _this.back = new ThreeBSP.Node();
+    }
+    return buildrecursive(_this.back, sides.back);
+  }
+}
+
+function clonerecursive(node, _this) {
+  var _ref;
+  node.divider = (_ref = _this.divider) != null ? _ref.clone() : void 0;
+  node.polygons = [];
+  var p, _i, _len, _ref1;
+  _ref1 = _this.polygons;
+  for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+    p = _ref1[_i];
+    node.polygons.push(p.clone());
+  }
+  if(_this.front != null){
+    node.front = new ThreeBSP.Node();
+    return clonerecursive(node.front,_this.front);
+  }
+  if(_this.back != null){
+    node.back = new ThreeBSP.Node();
+    return clonerecursive(node.back,_this.back);
+  }
+}
+
+function clipPolygonsrecursive(node,polygons){
+  var back, front, poly, _i, _len;
+  if (!node.divider) {
+    return polygons.slice();
+  }
+  front = [];
+  back = [];
+  for (_i = 0, _len = polygons.length; _i < _len; _i++) {
+    poly = polygons[_i];
+    node.divider.subdivide(poly, front, back, front, back);
+  }
+  // if (node.front) {
+  //   front = clipPolygonsrecursive(node.front,front);
+  // }
+  // if (node.back) {
+  //   back = clipPolygonsrecursive(node.back,back);
+  // }
+  // if (node.back) {
+  //   return front.concat(back);
+  // } else {
+  //   return front;
+  // }
+  if (node.back) {
+    if(node.front){
+      return clipPolygonsrecursive(node.front,front).concat(clipPolygonsrecursive(node.back,back));
+    }
+    else
+      return front.concat(clipPolygonsrecursive(node.back,back));
+  } else {
+    if(node.front)
+      return clipPolygonsrecursive(node.front,front);
+    else
+      return front;
+  }
+}
+
+function clipTorecursive(_this, node) {
+  _this.polygons = node.clipPolygons(_this.polygons);
+  if (_this.front != null) {
+    clipTorecursive(_this.front, node);
+  }
+  if (_this.back != null) {
+    return clipTorecursive(_this.back, node);
+  }
+}
+
+function allPolygons(_this){
+  return _this.polygons.slice().concat( _this.front != null ? allPolygons(_this.front) :  [], _this.back != null ? allPolygons(_this.back) : []);
+}
+
+function invertrecursive(_this){
+  var  poly, _i, _len, _ref, _ref2;
+  _ref = _this.polygons;
+  for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+    poly = _ref[_i];
+    poly.invert();
+  }
+  if(_this.divider) _this.divider.invert();
+  _ref2 = [_this.back, _this.front], _this.front = _ref2[0], _this.back = _ref2[1], _ref2;
+  if(_this.front) invertrecursive(_this.front);
+  if(_this.back) invertrecursive(_this.back);
+}
 
 ThreeBSP.Node = (function () {
 
@@ -493,24 +494,26 @@ ThreeBSP.Node = (function () {
     var node,
       _this = this;
 
-    node = new ThreeBSP.Node(this.options);
-    var _ref;
-    node.divider = (_ref = _this.divider) != null ? _ref.clone() : void 0;
-    node.polygons = [];
-    var p, _i, _len, _ref1;
-    _ref1 = _this.polygons;
-    for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
-      p = _ref1[_i];
-      node.polygons.push(p.clone());
-    }
-    node.front = _this.front != null ? _this.front.clone() : void 0;
-    node.back = _this.back != null ? _this.back.clone() : void 0;
+    node = new ThreeBSP.Node();
+
+    // var _ref;
+    // node.divider = (_ref = _this.divider) != null ? _ref.clone() : void 0;
+    // node.polygons = [];
+    // var p, _i, _len, _ref1;
+    // _ref1 = _this.polygons;
+    // for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+    //   p = _ref1[_i];
+    //   node.polygons.push(p.clone());
+    // }
+    // node.front = _this.front != null ? _this.front.clone() : void 0;
+    // node.back = _this.back != null ? _this.back.clone() : void 0;
+
+    clonerecursive(node,_this);
     return node;
   };
 
-  function Node(polygons, options?:any) {
+  function Node(polygons?: any[]) {
     var _this = this;
-    this.options = options != null ? options : {};
     this.clipTo = __bind(this.clipTo, this);
 
     this.clipPolygons = __bind(this.clipPolygons, this);
@@ -525,38 +528,38 @@ ThreeBSP.Node = (function () {
 
     this.clone = __bind(this.clone, this);
 
-    if ((polygons != null) && !(polygons instanceof Array)) {
-      this.options = polygons;
-      polygons = void 0;
-    }
     this.polygons = [];
-    if ((polygons != null) && polygons.length) {
+    if (polygons && polygons.length) {
       _this.build(polygons);
     }
   }
 
   Node.prototype.build = function (polygons) {
-    var side, sides;
-    sides = {
-      front: [],
-      back: []
-    };
-    if (this.divider == null) {
-      this.divider = polygons[0].clone();
-      // this.divider = polygons[Math.round(polygons.length-1)].clone();
-    }
-    for (var _i = 0; _i < polygons.length; _i++) {
-      this.divider.subdivide(polygons[_i], this.polygons, this.polygons, sides.front, sides.back);
-    }
-    for (side in sides) {
-      // if (!__hasProp.call(sides, side)) continue;
-      if (sides[side].length) {
-        if (this[side] == null) {
-          this[side] = new ThreeBSP.Node(this.options);
-        }
-        this[side].build(sides[side]);
-      }
-    }
+    // var sides;
+    // sides = {
+    //   front: [],
+    //   back: []
+    // };
+    // if (this.divider == null) {
+    //   // this.divider = polygons[0].clone();
+    //   this.divider = polygons[Math.floor(polygons.length / 2)].clone();
+    // }
+    // for (var _i = 0; _i < polygons.length; _i++) {
+    //   this.divider.subdivide(polygons[_i], this.polygons, this.polygons, sides.front, sides.back);
+    // }
+    // if (sides.front.length) {
+    //   if (this.front == null) {
+    //     this.front = new ThreeBSP.Node();
+    //   }
+    //   this.front.build(sides.front);
+    // }
+    // if (sides.back.length) {
+    //   if (this.back == null) {
+    //     this.back = new ThreeBSP.Node();
+    //   }
+    //   this.back.build(sides.back);
+    // }
+    buildrecursive(this,polygons);//尾递归
     return this;
   };
 
@@ -575,57 +578,65 @@ ThreeBSP.Node = (function () {
   };
 
   Node.prototype.allPolygons = function () {
-    var _this = this;
-    var _ref, _ref1;
-    return _this.polygons.slice().concat(((_ref1 = _this.front) != null ? _ref1.allPolygons() : void 0) || []).concat(((_ref = _this.back) != null ? _ref.allPolygons() : void 0) || []);
+    return allPolygons(this);
+    // var _this = this;
+    // var _ref, _ref1;
+    // return _this.polygons.slice().concat(((_ref1 = _this.front) != null ? _ref1.allPolygons() : void 0) || []).concat(((_ref = _this.back) != null ? _ref.allPolygons() : void 0) || []);
   };
 
   Node.prototype.invert = function () {
-    var flipper, poly, _i, _j, _len, _len1, _ref, _ref1, _ref2;
-    _ref = this.polygons;
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      poly = _ref[_i];
-      poly.invert();
-    }
-    _ref1 = [this.divider, this.front, this.back];
-    for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
-      flipper = _ref1[_j];
-      flipper != null ? flipper.invert() : void 0;
-    }
-    _ref2 = [this.back, this.front], this.front = _ref2[0], this.back = _ref2[1], _ref2;
+    // var flipper, poly, _i, _j, _len, _len1, _ref, _ref1, _ref2;
+    // _ref = this.polygons;
+    // for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+    //   poly = _ref[_i];
+    //   poly.invert();
+    // }
+
+    // _ref1 = [this.divider, this.front, this.back];
+    // for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+    //   flipper = _ref1[_j];
+    //   flipper != null ? flipper.invert() : void 0;
+    // }
+    // _ref2 = [this.back, this.front], this.front = _ref2[0], this.back = _ref2[1], _ref2;
+    invertrecursive(this);
     return this;
   };
 
   Node.prototype.clipPolygons = function (polygons) {
-    var back, front, poly, _i, _len;
-    if (!this.divider) {
-      return polygons.slice();
-    }
-    front = [];
-    back = [];
-    for (_i = 0, _len = polygons.length; _i < _len; _i++) {
-      poly = polygons[_i];
-      this.divider.subdivide(poly, front, back, front, back);
-    }
-    if (this.front) {
-      front = this.front.clipPolygons(front);
-    }
-    if (this.back) {
-      back = this.back.clipPolygons(back);
-    }
-    if (this.back) {
-      return front.concat(back);
-    } else {
-      return front;
-    }
+    return clipPolygonsrecursive(this,polygons);
+
+    // var back, front, poly, _i, _len;
+    // if (!this.divider) {
+    //   return polygons.slice();
+    // }
+    // front = [];
+    // back = [];
+    // for (_i = 0, _len = polygons.length; _i < _len; _i++) {
+    //   poly = polygons[_i];
+    //   this.divider.subdivide(poly, front, back, front, back);
+    // }
+    // if (this.front) {
+    //   front = this.front.clipPolygons(front);
+    // }
+    // if (this.back) {
+    //   back = this.back.clipPolygons(back);
+    // }
+    // if (this.back) {
+    //   return front.concat(back);
+    // } else {
+    //   return front;
+    // }
   };
 
   Node.prototype.clipTo = function (node) {
-    this.polygons = node.clipPolygons(this.polygons);
-    if (this.front != null) {
-      this.front.clipTo(node);
-    }
-    this.back != null ? this.back.clipTo(node) : void 0;
+    // this.polygons = node.clipPolygons(this.polygons);
+    // if (this.front != null) {
+    //   this.front.clipTo(node);
+    // }
+    // if (this.back != null) {
+    //   this.back.clipTo(node);
+    // }
+    clipTorecursive(this,node);
     return this;
   };
 
